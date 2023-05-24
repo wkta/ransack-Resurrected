@@ -18,28 +18,41 @@ Now we are using the `pyved-engine` + Python3.
 The new project maintainer is [moonb3ndr](https://github.com/wkta).
 
 
-## How to test the game?
+## How to run the game?
 
-**Important**: Our game depends on the `pyved_engine`:
+**Important**: Firstly you need python3. Secondly, our game depends on the `pyved_engine`:
 a work-in-progress [game engine](https://github.com/gaudiatech/pyved-engine)
 
 It also depends on libraries that are listen in the `requirements.txt` file.
 
-To install all these dependencies it is recommended to proceed as follows:
+To install all these dependencies takes some time, but you need to do this only once!
+
+It is recommended to proceed as follows:
 1. download both ravenous caves, and *the custom game engine* on your computer.
 The best option is to use git:
 ```shell
 git clone https://github.com/wkta/ravenous-caves.git
+```
+And then
+```shell
 git clone https://github.com/gaudiatech/pyved-engine.git
 ```
-2. using the command line, navigate to the folder that contains ravenous caves.
-3. setup a new virtual environment by typing `python -m venv venv`
-4. activate the virtual environment, for example on windows: `venv\Scripts\activate.bat`
-5. install all basic requirements by typing `pip install -r requirements.txt`
-6. using the command line, navigate to the folder that contains the game engine.
-7. install the engine within the current (still active) virtual environment. You can do that
-by typing `pip install -e .` See pip documentation and "editable mode" installation if you wish to learn more.
-
+2. using the command line, navigate to the folder that **contains ravenous caves**.
+3. setup a new virtual environment by typing `python -m venv venv` and activate that virtual environment, for example on windows: `venv\Scripts\activate.bat`
+4. install all basic requirements by typing ...
+```shell
+pip install -r requirements.txt
+```
+5. using the command line, navigate to the folder that contains the game engine.
+6. install the engine within the current (still active) virtual environment. You can do that
+by typing ... (see pip documentation and "editable mode" installation if you wish to learn more)
+```shell
+pip install -e .
+```
+7. go back to the folder **that contains ravenous caves** and type...
+```shell
+python main.py
+```
 ## Copyright notice
 
 The artwork and visual assets, which includes the contents of the assets/IMG/ folder, are covered by the CC Attribution 4.0 license in the root file CC.

@@ -7,7 +7,7 @@ import os
 import pickle
 import random
 
-import katagames_engine as kengi
+import pyved_engine as kengi
 
 from internal.DISPLAY import interface, effects, menu, display, text
 from internal.HERO import creator
