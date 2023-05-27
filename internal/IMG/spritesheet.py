@@ -6,33 +6,30 @@
 # Note: When calling images_at the rect is the format:
 # (x, y, x + offset, y + offset)
 
-import pygame
-
+import pyved_engine as pyv
 from ..UTIL import load_image
 
-pygame.init()
 
-
-class spritesheet(object):
+class spritesheet:
     def __init__(self, filename):
-        try:
-            self.sheet, r = load_image.load_image(filename, 1)
-        except pygame.error as message:
-            print('Unable to load spritesheet image:', filename)
-            raise SystemExit(message)
+        # try:
+        self.sheet, r = load_image.load_image(filename, 1)
+        # except pygame.error as message:
+        #     print('Unable to load spritesheet image:', filename)
+        #     raise SystemExit(message)
 
     # Load a specific image from a specific rectangle
     def image_at(self, rectangle, colorkey=None):
         # Loads image from x,y,x+offset,y+offset
-        rect = pygame.Rect(rectangle)
-        image = pygame.Surface(rect.size).convert()
+        rect = pyv.pygame.Rect(rectangle)
+        image = pyv.pygame.Surface(rect.size).convert()
         image.blit(self.sheet, (0, 0), rect)
         if colorkey is not None:
             if colorkey is -1:
                 colorkey = image.get_at((0, 0))
             if colorkey is 1:
                 colorkey = [255, 0, 255]
-            image.set_colorkey(colorkey, pygame.RLEACCEL)
+            image.set_colorkey(colorkey, pyv.pygame.RLEACCEL)
         return image
 
     # Load a whole bunch of images and return them as a list

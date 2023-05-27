@@ -3,7 +3,9 @@ Script for pre-loading all images used in Ransack
 """
 import os
 
-from .spritesheet import *
+import pyved_engine as pyv
+
+from .spritesheet import spritesheet
 from ..UTIL import const, load_image
 
 
@@ -35,8 +37,8 @@ def load(path=''):
     for i in range(256, 264):
         mapImages[i], r = load_image.load_image(os.path.join('EXT', siteImgs[i - 256]), 1)
     for i in range(18):
-        accessories[i] = pygame.Surface((15, 10))
-        accessories[i].set_colorkey([255, 128, 128], pygame.RLEACCEL)
+        accessories[i] = pyv.pygame.Surface((15, 10))
+        accessories[i].set_colorkey([255, 128, 128], pyv.pygame.RLEACCEL)
         accessories[i].blit(
             mapImages[242 + int(i / 6)], (((i % 6) / 3) * -15, (i % 3) * -10)
         )
