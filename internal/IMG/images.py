@@ -9,18 +9,20 @@ from .spritesheet import spritesheet
 from ..UTIL import const, load_image
 
 
+editorImages = list(range(7))
+
 mHeroImages = list(range(18))
 fHeroImages = list(range(18))
-mapImages = list(range(264))
-editorImages = list(range(7))
 accessories = list(range(18))
 
+mapImages = list(range(264))
 
-def load(path=''):
+
+def preload_all():
     mapSpriteSheet = spritesheet('mastersheet.bmp')
     for i in range(128):
         mapImages[i] = mapSpriteSheet.image_at(((i * const.blocksize) % 240,
-                                                (i / 8) * const.blocksize,
+                                                (i // 8) * const.blocksize,
                                                 const.blocksize,
                                                 const.blocksize),
                                                1)
@@ -28,12 +30,16 @@ def load(path=''):
     for i in range(128, 256):
         # print (i*const.blocksize)%240 + 240
         mapImages[i] = mapSpriteSheet.image_at(((i * const.blocksize) % 240 + 240,
-                                                ((i - 128) / 8) * const.blocksize,
+                                                ((i - 128) // 8) * const.blocksize,
                                                 const.blocksize,
                                                 const.blocksize),
                                                1)
-    siteImgs = ['itemSh.bmp', 'mShop.bmp', 'bSmith.bmp', 'armry.bmp', 'tavrn.bmp', 'townhall.bmp', 'house1.bmp',
-                'tower1.bmp']
+
+    # permet de peupler : mapImages (dans un 1er temps) puis
+    # accesories[i], 0<=i<=17
+    siteImgs = [
+        'itemSh.bmp', 'mShop.bmp', 'bSmith.bmp', 'armry.bmp', 'tavrn.bmp', 'townhall.bmp', 'house1.bmp', 'tower1.bmp'
+    ]
     for i in range(256, 264):
         mapImages[i], r = load_image.load_image(os.path.join('EXT', siteImgs[i - 256]), 1)
     for i in range(18):
@@ -42,12 +48,16 @@ def load(path=''):
         accessories[i].blit(
             mapImages[242 + int(i / 6)], (((i % 6) / 3) * -15, (i % 3) * -10)
         )
+
+    # permet de peupler : mHeroImages[i ], 0<=i<=17
     mHeroSpriteSheet = spritesheet(os.path.join('CHAR', 'mherosheet.bmp'))
     for i in range(18):
         mHeroImages[i] = mHeroSpriteSheet.image_at(((i * const.blocksize) % 270,
                                                     (i / 9) * const.blocksize,
                                                     const.blocksize,
                                                     const.blocksize), -1)
+
+    # permet de peupler : fHeroImages[i], 0<=i<=17
     fHeroSpriteSheet = spritesheet(os.path.join('CHAR', 'fherosheet.bmp'))
     for i in range(18):
         fHeroImages[i] = fHeroSpriteSheet.image_at(((i * const.blocksize) % 270,

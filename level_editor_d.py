@@ -17,6 +17,10 @@ pygame = pyv.pygame
 # glvars tom
 boxPoints = None
 
+# const Tom
+MAX_NB_MAPS = 25
+
+
 # a hack by tom, so can load properly the existing map, using cPickle.load
 from internal import MAP as _legacyMAP
 import sys
@@ -63,6 +67,9 @@ class Handler:
         for i in range(7):
             self.editorImages[i] = editorSpriteSheet.image_at(
                 (i * const.blocksize, 0, const.blocksize, const.blocksize), -1)
+
+        # what map will be loaded if we press 'P'?
+        self.select_map_rank = 0
 
     def drawBox(self, pos, color):
         (x, y) = pos
@@ -451,65 +458,74 @@ class Handler:
             print('Cannot load map:', filename)
             return
 
-    def loadMap(self):
-        filename = self.stored_filename
-        filepath = os.getcwd() + '/assets/WORLDS/' + filename
-        if not isinstance(filename, str):
-            raise Exception('wrong type for `filename` argument was given')
-            # filename = self.getFilename()
+    # -- def loadMap --
+    # @deprecated
+    # we used to load maps from Gzipfile ... No need to do this anymore
+    # but I keep the code here, just in case:
+    # filename = self.getFilename()
+    # try:
+    #     save = gzip.GzipFile(filepath, 'rb')
+    #     ...
+    #
+    # except IOError as message:
+    #     print('Cannot load map:', filepath)
+    #     return
 
-        # try:
-        # save = gzip.GzipFile(filepath, 'rb')
-        save_fp = open(filepath, 'rb')  # rb')
-        ball = cPickle.load(save_fp)
-        save_fp.close()
-        # ------
-        #  instrospection
-        # ------
-        print('~~~ introspection ~~~')
-        print(type(ball))
-        for i in range(3):
-            print('    '+ str(type(ball[i])))
-            if i == 0:
-                print(f'    COMPO#{i}: ...', len(ball[0]))
-                print('    More about COMPO#0')
-                for k in range(25):
-                    obj = ball[i][k]
-                    print('    ' * 2 + str(type(obj)), 'len=', len(obj))
+    def load_map(self, mapname, map_rank):
 
-        print('COMPO#1:', ball[1])
-        print('COMPO#2:', ball[2])
-        print('~'*33)
+        if mapname is None:
+            mapname = 'MainWorld'
+        elif not isinstance(mapname, str):
+            print('*** Warning! invalid type detected in .load_map(mapname, mrank): argument mapname isnt a <str>')
 
-        # the following MTH.CALL is defined in such a way, it extracts data following that format spec.:
-        #  (grid, DBGD, poe, poex, hs, shops, chests, npcs, nbrs, up, dn, nm, tp, lv, vd) = ball
-        # MEANING=
-        # grid,
-        # DBGD:defaultbackground,
-        # poe:pt_of_entry,
-        # poex:pt_of_exit,
-        # hs:heroStart,
-        # ...
-        # nbrs:neighbors,
-        # up:up,
-        # dn:down,
-        # nm:name,
-        # tp:type,
-        # lv:level,
-        # vs:visDict
+        filepath = os.getcwd() + '/assets/WORLDS/' + mapname
+        with open(filepath, 'rb') as save_fp:
+            ball = cPickle.load(save_fp)
+            # ------
+            #  instrospection
+            # ------
+            # print('~~~ introspection ~~~')
+            # print(type(ball))
+            # for i in range(3):
+            #     print('    '+ str(type(ball[i])))
+            #     if i == 0:
+            #         print(f'    COMPO#{i}: ...', len(ball[0]))
+            #         print('    More about COMPO#0')
+            #         for k in range(25):
+            #             obj = ball[i][k]
+            #             print('    ' * 2 + str(type(obj)), 'len=', len(obj))
+            #
+            # print('COMPO#1:', ball[1])
+            # print('COMPO#2:', ball[2])
+            # print('~'*33)
 
-        # this will crash, because we try to install a full world state (many world)
-        #   inside a GeneralMap model that represents only one map ...
-        # >>> self.myMap.installBall(ball)
-        print(type(self.myMap))
+            # - - - - - -
+            # the following Method CALL is defined in such a way, it extracts data following that format spec.:
+            #  (grid, DBGD, poe, poex, hs, shops, chests, npcs, nbrs, up, dn, nm, tp, lv, vd) = ball
+            # MEANING=
+            # grid,
+            # DBGD:defaultbackground,
+            # poe:pt_of_entry,
+            # poex:pt_of_exit,
+            # hs:heroStart,
+            # ...
+            # nbrs:neighbors,
+            # up:up,
+            # dn:down,
+            # nm:name,
+            # tp:type,
+            # lv:level,
+            # vs:visDict
 
-        maprank = 13
-        slice_of_wball = ball[0][maprank]  # TODO allow to select the map rank from GUI
-        self.myMap.installBall(slice_of_wball)
+            # the line below was the original line, before tom's hacks.
+            # IT WILL crash, because we try to install a full world state (many world)
+            # inside a GeneralMap object, whose class represents 1 SINGLE map ...
 
-        # except IOError as message:
-        #     print('Cannot load map:', filepath)
-        #     return
+            # >>> self.myMap.installBall(ball)
+
+            # instead, we use the map_rank arg that selects a given map from the "ball" obj, and we load it
+            slice_of_wball = ball[0][map_rank]  # TODO allow to select map_rank from GUI?
+            self.myMap.installBall(slice_of_wball)
 
     def saveWorld(self):
         filename = self.getFilename()
@@ -654,9 +670,11 @@ class Handler:
                 if self.drawMode:
                     self.place(x / blocksize, y / blocksize, self.currentTile)
                 self.cursorPos = (x, y)
+        elif event.key == pygame.K_l:
+            self.select_map_rank = (self.select_map_rank+1) % MAX_NB_MAPS
+            print('  SELECTED map_rank -->', self.select_map_rank)
         elif event.key == pygame.K_p:
-            self.stored_filename = 'MainWorld'
-            self.loadMap()
+            self.load_map(None, self.select_map_rank)  # use default mapname
 
         elif event.key == pygame.K_t:
             self.saveMap()
@@ -668,19 +686,23 @@ class Handler:
             self.drawMode = not self.drawMode
         elif event.key == pygame.K_s:
             self.saveWorld()
-        elif event.key == pygame.K_l:
-            self.loadWorld()
+        # elif event.key == pygame.K_l:
+        #     self.loadWorld()
+
         elif event.key == pygame.K_r:
             self.removeMap()
         elif event.key == pygame.K_f:
             self.floodFill(self.currentTile, (x, y))
+
         elif event.key == pygame.K_g:
             # self.generateMap( self.getInput('Enter type: dungeon, maze or wilds :'), int(self.getInput('Enter number of trials :')) )
             self.generateMap(self.getInput('Enter type: dungeon, maze, wilds, or cave:'))
+
         elif event.key == pygame.K_e:
             self.offset += 32
             if self.offset == 256:
                 self.offset = 0
+
         elif event.key == pygame.K_x:
             self.removeNPC(x / blocksize, y / blocksize)
         elif event.key == pygame.K_n:
@@ -688,28 +710,35 @@ class Handler:
             print(self.myMap.NPCs)
         elif event.key == pygame.K_i:
             self.getMapInfo()
+
         elif event.key == pygame.K_m:
             myWorld.currentMap = self.switchMap()
             self.myMap = myWorld.currentMap
             self.cursorPos = (0, 0)
             self.topX = 0
             self.topY = 0
+
         elif event.key == pygame.K_a:
             self.addMap(self.getInput('Enter title of new map: '))
+
         elif event.key == pygame.K_c:
             filename = self.getInput('Enter filename for screenshot: ') + ".bmp"
             self.updateDisplay('field')
             pygame.image.save(gridField, filename)
-        elif event.key == pygame.K_p:
-            self.importMap(self.getInput('Enter filename of map: '))
+
+        # elif event.key == pygame.K_p:
+        #     self.importMap(self.getInput('Enter filename of map: '))
+
         elif event.key == pygame.K_RETURN:
             if self.myMap.getEntry(x / blocksize, y / blocksize) == const.CHEST:
                 self.fillChest(self.myMap.chests[(x / blocksize,
                                                   y / blocksize)])
             else:
                 self.tileProperties((x / blocksize, y / blocksize))
+
         elif event.key == pygame.K_PLUS:
             self.currentTile += 1
+
         elif event.key == pygame.K_MINUS:
             self.currentTile -= 1
 
@@ -1008,9 +1037,11 @@ def mainloop():
     pygame.init()
     screen = pygame.display.set_mode(SCR_SIZE)
     pygame.display.set_caption("Ravenous-caves Level Editor")
-    pygame.key.set_repeat(50, 100)
+    # things get messy in the GUI actions, when we use this, so I prefer to remove it (tom)
+    # pygame.key.set_repeat(50, 100)
 
-    images.load()
+    images.preload_all()
+
     mapImages = images.mapImages
     accImages = images.accessories
     clock = pygame.time.Clock()
@@ -1038,13 +1069,19 @@ def mainloop():
             elif ev.type == pygame.QUIT:
                 continue_edition = False
 
-            # update gfx
-            screen.blit(gridField, (0, 0))
-            pygame.display.flip()
+        # update gfx
+        screen.blit(gridField, (0, 0))
+        pygame.display.flip()
 
         clock.tick(60)
         # myHandler.updateDisplay()
 
 
+# --- instructions printing ---
+print('  Instuctions:')
+print('-'*24)
+print('press P key to load the selected map from the current World')
+print('press L key to increment the map_rank (->selected map changes)')
+print()
+# lets go
 mainloop()
-
