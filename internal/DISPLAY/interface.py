@@ -241,7 +241,8 @@ class Interface:
                             return b.msg
 
     def boxMessage(self, message):
-
+        # TODO fix so the msg is still shown
+        return
         msgText = text.Text(message, os.getcwd() + "/FONTS/devinne.ttf", 18, colors.white, colors.gold, True)
         for i in range(0, 255, 8):
             borderBox = pygame.Surface((msgText.get_width(), msgText.get_height()))

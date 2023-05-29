@@ -1,14 +1,20 @@
 import gzip
 import os
-import pygame
+import pickle
 import random
 
-try:
-    import cPickle as pickle
-except:
-    import pickle
+import pygame
+import pyved_engine as pyv
 
 from . import battle, enemy, shop, tavern, townhall, director
+from .. import OBJ
+from ..DISPLAY import display, menu
+from ..HERO import hero
+from ..MAP import world
+from ..NPC import npcspawner
+from ..SCRIPTS import enemyScr, mapScr
+from ..UTIL import ticker, const, colors, misc, astar
+
 
 # import OBJ
 # from IMG import images
@@ -21,16 +27,8 @@ from . import battle, enemy, shop, tavern, townhall, director
 # from ..UTIL import ticker, const, colors, load_image, misc, astar
 # from math import ceil, floor
 
-from ..MAP import world
-from .. import OBJ
-from ..HERO import hero
-from ..SCRIPTS import enemyScr, mapScr
-from ..NPC import npcspawner
-from ..UTIL import ticker, const, colors, misc, astar
-from ..DISPLAY import display, menu
 
-
-class game():
+class game:
 
     def __init__(self, images, screen, clock, iFace, FX, iH, titleScreen, SFX, myWorldBall,
                  loadTicker=None, loadHero=None, loadWorld=None, loadDirector=None):
@@ -161,7 +159,10 @@ class game():
         self.myWorld.currentMap.setPlayerXY(x, y)
         self.myHero.setXY(x * const.blocksize, y * const.blocksize)
         self.Display.redrawMap(self.myMap, self.myHero, self.gameBoard)
-        self.FX.scrollFromCenter(gameBoard_old, self.gameBoard)
+
+        # TODO can i repair transitions?
+        # self.FX.scrollFromCenter(gameBoard_old, self.gameBoard)
+
         self.myMenu.displayStory(self.Director.getNarrartionEventByMapName(self.myMap.getName()))
 
     # takes screen shot and saves as bmp in serial fashion, beginning with 1
@@ -535,10 +536,16 @@ class game():
 
     def displayOneFrame(self):
         self.Display.redrawMap(self.myMap, self.myHero, self.gameBoard)
-        # self.updateSprites()
+
+        # TODO : problem -tom can u fix?
+        # if not calling update here, we dont see animations for NPCs etc
+        self.updateSprites()
         self.Display.displayOneFrame(self.myInterface, self.FX, self.gameBoard, self, self.myMap.type in const.darkMaps)
 
     def mainLoop(self):
+        print('--- ds mainLoop')
+        clock = pygame.time.Clock()
+
         self.visibleNPCs = []
         if not self.Director.getEvent(0):
             self.myMenu.displayStory(
@@ -550,7 +557,9 @@ class game():
         self.Display.redrawXMap(self.myMap, 2)
         self.updateSprites()
         self.Display.drawSprites(self.myHero, self.myMap, self.gameBoard, self, animated=False)
+
         while self.gameOn:
+
             if not self.myHero.moveQueue.isEmpty():
                 self.move(self.myHero.moveFromQueue())
             else:
@@ -565,14 +574,19 @@ class game():
                                   pygame.K_LEFT,
                                   pygame.K_RIGHT, ]:
                         self.event_handler(event_)
+
             if self.myMap.update(len(self.NPCs)) == 'newNPCs':
                 self.addNPCs(self.myMap, 'new')
 
             if self.updateNPCs() or self.myHero.moving:
                 self.Display.drawSprites(self.myHero, self.myMap, self.gameBoard, self, self.myHero.dir, animated=True)
                 # self.Display.drawSprites(self.myHero, self.myMap, self.gameBoard, self, None, animated=True)
+
             self.displayOneFrame()
-            pygame.time.wait(10)
+            # pygame.time.wait(10)
+            # -- refresh screen
+            pyv.flip()
+            clock.tick(60)
 
         self.myInterface.state = 'mainmenu'
         return self.won

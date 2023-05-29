@@ -7,33 +7,44 @@ import os
 import pickle
 import random
 
-import pyved_engine as kengi
+import pyved_engine as pyv
+pyv.bootstrap_e()
+def brokendef():
+    raise NotImplementedError
+
+pyv.pygame.display.flip = brokendef
 
 from internal.DISPLAY import interface, effects, menu, display, text
 from internal.HERO import creator
 from internal.IMG import images
 from internal.SND import sfx
 from internal.UTIL import colors, load_image, button
-from internal.UTIL import const, inputHandler
+from internal.UTIL import inputHandler
 from internal.classes import game
 
 
-kengi.bootstrap_e()
-pygame = kengi.pygame
+pygame = pyv.pygame
 android = False
-const.setScaleFactor(1)
+
+# const.setScaleFactor(1)
+pyv.init(1)
+# pygame.init()
+
 pygame.mixer.init()
 mixer = pygame.mixer
 # Set the height and width of the screen
-cfac = 1.0
-screenSize = [1280, 720]  # [720, 700]
-screen = pygame.display.set_mode(screenSize)
+#cfac = 1.0
+# screenSize = [1280, 720]  # [720, 700]
+# screen = pygame.display.set_mode(screenSize)
+
+screen = pyv.get_surface()
+screenSize = screen.get_size()
 
 if not pygame.font:
-    print('Warning, fonts disabled')
+    print('>>>>>>>>> Warning, fonts disabled')
 
 pygame.display.set_caption("Ransack")
-pygame.init()
+# pygame.init()
 pygame.key.set_repeat(100, 100)
 
 images.preload_all()
@@ -99,16 +110,21 @@ def endScreen(game, msg):
                                                  (0, 0) )
                                                  '''
     screen.blit(dScreen, (0, 0))
-    pygame.display.flip()
-    while (pygame.event.wait().type != pygame.MOUSEBUTTONDOWN):
+
+    # pygame.display.flip()
+    pyv.flip()
+
+    while pygame.event.wait().type != pygame.MOUSEBUTTONDOWN:
         pass
 
 
 def launchNewGame(titleScreen):
     print('launchNewGame')
-    newGame = game.game(images, screen, clock, iFace, FX, iH, titleScreen, SFX,
-                        myWorldBall, loadHero=C.mainLoop(screen))
+    newGame = game.game(
+        images, screen, clock, iFace, FX, iH, titleScreen, SFX, myWorldBall, loadHero=C.mainLoop(screen)
+    )
     FX.fadeOut(0)
+
     iFace.state = 'game'
     if newGame.mainLoop():
         endScreen(newGame, "You Win!")
@@ -131,26 +147,27 @@ def loadWorld():
 
 
 def loadSavedGame(titleScreen):
-    if android:
-        android.hide_keyboard()
-    try:
-        FX.displayLoadingMessage(titleScreen, 'Loading game file...')
-        savFile = gzip.GzipFile('ransack0.sav', 'rb', 1)
-        FX.displayLoadingMessage(titleScreen, 'Loading saved game...')
-        ball = pickle.load(savFile)
-        savFile.close()
-        Game = game.game(images, screen, clock, iFace,
-                         FX, iH, titleScreen, SFX, myWorldBall,
-                         ball[0], ball[1], ball[2], ball[3])
-        FX.fadeOut(0)
-        iFace.state = 'game'
-        if Game.mainLoop():
-            endScreen(Game, "You Win!")
-        else:
-            endScreen(Game, "Game Over.")
-        FX.fadeOut(0)
-    except IOError as err:
-        print('loadSavedGame error: {}'.format(err))
+    raise NotImplementedError
+    # if android:
+    #     android.hide_keyboard()
+    # try:
+    #     FX.displayLoadingMessage(titleScreen, 'Loading game file...')
+    #     savFile = gzip.GzipFile('ransack0.sav', 'rb', 1)
+    #     FX.displayLoadingMessage(titleScreen, 'Loading saved game...')
+    #     ball = pickle.load(savFile)
+    #     savFile.close()
+    #     Game = game.game(images, screen, clock, iFace,
+    #                      FX, iH, titleScreen, SFX, myWorldBall,
+    #                      ball[0], ball[1], ball[2], ball[3])
+    #     FX.fadeOut(0)
+    #     iFace.state = 'game'
+    #     if Game.mainLoop():
+    #         endScreen(Game, "You Win!")
+    #     else:
+    #         endScreen(Game, "Game Over.")
+    #     FX.fadeOut(0)
+    # except IOError as err:
+    #     print('loadSavedGame error: {}'.format(err))
 
 
 def mouseHandler(m):
@@ -171,7 +188,7 @@ def updateDisplay():
     clock.tick(20)
     screen.fill(colors.black)
     screen.blit(titleScreen, (0, 0))
-    screen.blit(logo, ((screen.get_width() / 2) - (logo.get_width() / 2), 100))
+    screen.blit(logo, ((screen.get_width() // 2) - (logo.get_width() // 2), 100))
     if pygame.font:
         font = pygame.font.Font("./FONTS/SpinalTfanboy.ttf", 48)
         for b in buttons:
@@ -219,8 +236,7 @@ def main():
                 if selection == 'Begin New Game':
                     print('Begin New Game {}x{}'.format(screenSize[0],
                                                         screenSize[1]))
-                    launchNewGame(pygame.Surface((screenSize[0],
-                                                  screenSize[1])))
+                    launchNewGame(screen) #  pygame.Surface(screenSize[0], screenSize[1])
                 elif selection == 'Load Saved Game':
                     loadSavedGame(pygame.Surface((screenSize[0],
                                                   screenSize[1])))
@@ -236,8 +252,8 @@ def main():
             screen.blit(font.render(str(android.get_dpi()), 1, colors.white,
                                     colors.black), (0, 0))
         updateDisplay()
-        pygame.display.flip()
-
+        # pygame.display.flip()
+        pyv.flip()
 
 if __name__ == '__main__':
     from internal import MAP as legacyMAP

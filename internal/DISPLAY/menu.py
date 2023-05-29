@@ -201,7 +201,12 @@ class menu:
                     return
 
     def displayStory(self, msg):
-        if msg == None: return
+        """
+        this method is
+        supposed to show a blocking popup over the rest of the game GUI. Tom: this needs Refactoring!
+        """
+        if msg is None:
+            return
         storyBox = self.openWindow(350, 300)
         storyBox = pygame.transform.scale(self.storyBox.copy(),
                                           (int(ceil(self.storyBox.get_width() * const.scaleFactor)),
@@ -211,8 +216,12 @@ class menu:
         storyBox.blit(msg_, ((storyBox.get_width() / 2) - (msg_.get_width() / 2),
                              (storyBox.get_height() / 2) - (msg_.get_height() / 2) + 41))
         self.screen.blit(storyBox, (0, 41))
-        self.Display.displayOneFrame(self.interface, self.FX)
-        while (pygame.event.wait().type != pygame.MOUSEBUTTONDOWN): pass
+
+        # TODO remake this
+        # self.Display.displayOneFrame(self.interface, self.FX)
+
+        # while pygame.event.wait().type != pygame.MOUSEBUTTONDOWN:
+        #     pass
 
     def getStatsTextLine(self, line):
         graphicElements = []

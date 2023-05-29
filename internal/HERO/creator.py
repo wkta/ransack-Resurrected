@@ -1,10 +1,13 @@
-import pygame
+import pyved_engine as pyv
 import os
 from ..DISPLAY import text
 from ..UTIL import load_image, const, colors, slider, eztext
 from ..IMG import images
 from random import randrange
 from math import ceil, floor
+
+
+pygame = pyv.pygame
 
 
 try:
@@ -106,7 +109,7 @@ class Creator:
         self.itl = self.bItl + ((self.sliders[1].getValue() * 10) / 4) / 5
         self.dex = self.bDex + (((self.sliders[1].getValue() * 10) / 2) / 5) + 2 * self.sliders[2].getValue()
 
-    def updateDisplay(self, screen, step):
+    def refresh_screen(self, screen, step):
         if step == 'stats':
             self.displayField, r = load_image.load_image(os.path.join('MENU', "createBox.png"))
             self.calculateStats()
@@ -135,11 +138,10 @@ class Creator:
                 self.faith = 'asatru'
                 self.displayField.blit(images.mapImages[245], (40, 134))
             screen.blit(pygame.transform.scale(self.displayField, (720, 720)), (0, 0))
-            pygame.display.flip()
+
         elif step == 'name':
             self.displayField, r = load_image.load_image(os.path.join('MENU', "createBox2.png"))
             screen.blit(pygame.transform.scale(self.displayField, (720, 720)), (0, 0))
-            pygame.display.flip()
 
     def getBall(self):
         if android:
@@ -185,14 +187,23 @@ class Creator:
                     os.sys.exit()
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_RETURN:
-                        self.displayField, r = load_image.load_image(os.path.join('MENU', "createBox2.png"))
-                        self.updateDisplay(screen, 'name')
-                        if android:
-                            android.show_keyboard()
-                        self.name = self.getInput(screen, '')
-                        return self.getBall()
+                        if (not hasattr(self, 'show_box2')) or (not self.show_box2):
+
+                            self.displayField, r = load_image.load_image(os.path.join('MENU', "createBox2.png"))
+                            self.show_box2 = True
+                            self.name = 'NoNameAvatar'  # TODO fix logic to input : self.getInput(screen, '')
+                        else:
+
+                            return self.getBall()
+
                     elif event.key == pygame.K_ESCAPE:
                         os.sys.exit()
-            self.updateDisplay(screen, 'stats')
+
+            self.refresh_screen(screen, 'stats')
+            if hasattr(self, 'show_box2') and self.show_box2:
+                self.refresh_screen(screen, 'name')
+
+            pyv.flip()
+
         while (pygame.event.wait().type != pygame.KEYDOWN):
             pass

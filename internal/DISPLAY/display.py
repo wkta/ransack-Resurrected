@@ -39,7 +39,10 @@ class Display:
             self.screen.blit( pygame.transform.scale(board,
                                                            (int(ceil(300 * const.scaleFactor)),
                                                             int(ceil(300 * const.scaleFactor)) ) ), (100,100) )'''
-        pygame.display.flip()
+
+        # TODO can we fix the display to not call flip that
+        #  many times?
+        # pygame.display.flip()
 
     def drawShade(self, map, gameBoard):
         """Takes first two coordinates of hero rect, gameBoard and

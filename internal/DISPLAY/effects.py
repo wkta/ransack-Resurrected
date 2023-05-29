@@ -1,11 +1,12 @@
 import os
 from math import floor, ceil
-
-import pygame
-
+import pyved_engine as pyv
 from . import flash
 from ..DISPLAY import text
 from ..UTIL import const, colors
+
+
+pygame = pyv.pygame
 
 
 class effects:
@@ -56,6 +57,10 @@ class effects:
                           }
 
     def fadeOut(self, size):
+        # TODO
+        # tom: is there an easy way to re-enable fadeOut effect ??
+        return
+
         fadeScreen = pygame.Surface((int(ceil(300 * const.scaleFactor)) - 2 * size,
                                      int(ceil(300 * const.scaleFactor)) - 2 * size))
         fadeScreen.fill(colors.black)
@@ -103,4 +108,5 @@ class effects:
         board_.blit(msgBox, ((board_.get_width() / 2 - msgBox.get_width() / 2),
                              (self.screen.get_width() / 2 - msgBox.get_height())))
         self.screen.blit(board_, (0, 0))
-        pygame.display.flip()
+        # pygame.display.flip()
+        pyv.flip()
