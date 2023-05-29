@@ -35,8 +35,6 @@ class Creator:
         self.images[0], r = load_image.load_image(os.path.join('MENU', "cursor.png"), -1)
         self.images[1], r = load_image.load_image(os.path.join('MENU', 'cursor_l.png'), -1)
 
-        images.load()
-
     def getInput(self, screen, msg):
         # get file name
         input = None

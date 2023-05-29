@@ -35,6 +35,9 @@ if not pygame.font:
 pygame.display.set_caption("Ransack")
 pygame.init()
 pygame.key.set_repeat(100, 100)
+
+images.preload_all()
+
 clock = pygame.time.Clock()
 random.seed(os.urandom(1))
 FX = effects.effects(clock, screen)
@@ -42,7 +45,7 @@ SFX = sfx.sfx(mixer)
 C = creator.Creator()
 iH = inputHandler.inputHandler(FX)
 iFace = interface.Interface(screen, iH)
-images.load()
+
 D = display.Display(screen, images)
 # this is the static game world i.e. non-generated world
 # loaded once at startup and used thereafter

@@ -53,7 +53,7 @@ def preload_all():
     mHeroSpriteSheet = spritesheet(os.path.join('CHAR', 'mherosheet.bmp'))
     for i in range(18):
         mHeroImages[i] = mHeroSpriteSheet.image_at(((i * const.blocksize) % 270,
-                                                    (i / 9) * const.blocksize,
+                                                    (i // 8) * const.blocksize,
                                                     const.blocksize,
                                                     const.blocksize), -1)
 
@@ -61,21 +61,17 @@ def preload_all():
     fHeroSpriteSheet = spritesheet(os.path.join('CHAR', 'fherosheet.bmp'))
     for i in range(18):
         fHeroImages[i] = fHeroSpriteSheet.image_at(((i * const.blocksize) % 270,
-                                                    (i / 9) * const.blocksize,
+                                                    (i // 8) * const.blocksize,
                                                     const.blocksize,
                                                     const.blocksize), -1)
 
 
-def loadNPC(file):
+def load_npc(file):
     npcSS = spritesheet(os.path.join('CHAR', file))
     npcImages = list(range(18))
     for i in range(18):
         npcImages[i] = npcSS.image_at(((i * const.blocksize) % 270,
-                                       (i / 9) * const.blocksize,
+                                       (i // 8) * const.blocksize,
                                        const.blocksize,
                                        const.blocksize), -1)
     return npcImages
-
-
-def getMHero():
-    return

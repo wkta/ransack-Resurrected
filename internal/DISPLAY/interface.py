@@ -32,10 +32,8 @@ class Interface:
         # self.gameBoard = game.gameBoard
 
         self.On = True
-
         self.popupWin = None
         self.popupLoc = None
-        images.load()
 
     def writeText(self, surface, loc, text, fgc, bgc, size=14,
                   font=os.getcwd() + "/FONTS/gothic.ttf"):

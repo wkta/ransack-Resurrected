@@ -18,7 +18,7 @@ from ..IMG import images
 from ..UTIL import const, colors
 
 
-class Tavern():
+class Tavern:
 
     def __init__(self, screen, interface, ticker, iH, menu):
         self.storeScreen = pygame.Surface((300, 300))
@@ -26,7 +26,7 @@ class Tavern():
         self.screen = screen
         self.myHud = interface
         self.ticker = ticker
-        images.load()
+
         self.myMenu = menu
         self.images = range(2)
         #self.images[0], r = load_image('cursor.bmp', -1)

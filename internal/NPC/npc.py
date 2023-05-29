@@ -11,7 +11,7 @@ class Npc(pygame.sprite.Sprite):
         self.start = (x, y)
         self.X = x
         self.Y = y
-        self.images = images.loadNPC(imgFile)
+        self.images = images.load_npc(imgFile)
         pygame.sprite.Sprite.__init__(self) #call Sprite intializer
         self.imgIdx = 2
         self.stepIdx = 0
