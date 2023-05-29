@@ -38,7 +38,7 @@ class Handler:
         npcAvatar = pygame.Surface((const.blocksize, const.blocksize))
         for n in npcScr.npcList:
             npcImgFilename = n + '.bmp'
-            npcImgs = images.loadNPC(npcImgFilename)
+            npcImgs = images.load_npc(npcImgFilename)
             self.npcImg[n] = npcImgs[2]
         # self.npcImg, npcR = load_image('npc.bmp')
         self.drawMode = False
