@@ -1,13 +1,16 @@
+import os
 from math import ceil, floor
 
-import os
-import pygame
+import pyved_engine as pyv
 
 from ..DISPLAY import text, menuBox
 from ..IMG import images
 from ..OBJ import item, weapon, armor
 from ..SCRIPTS import menuScr, armorScr, helpScr
 from ..UTIL import const, colors, load_image, button
+
+
+pygame = pyv.pygame
 
 
 class menu:
@@ -97,12 +100,9 @@ class menu:
 
     def displayChest(self, chest, msg='Chest'):
         menuBox = self.openWindow(200, 120)
-
         menuBox = self.iMenuBox.copy()
-
         font = os.getcwd() + "/FONTS/gothic.ttf"
         size = 14
-
         menuWin = self.iMenuBox.copy()
 
         msgText = text.Text(msg, os.getcwd() + "/FONTS/Squealer.ttf", 18, colors.white, colors.gold)
@@ -200,28 +200,37 @@ class menu:
                 if event_ == pygame.K_RETURN:
                     return
 
-    def displayStory(self, msg):
+    def displayStory(self, msg):  # so this method is actually used like a game loop by Dan
         """
-        this method is
-        supposed to show a blocking popup over the rest of the game GUI. Tom: this needs Refactoring!
+        method supposed to show a blocking popup over the rest of the game GUI.
+        Tom:this needs Refactoring! -> no more 2nd-level order game loops!
         """
+        # ------------------------
+        # init-like Chunck of code
+        # ------------------------
         if msg is None:
             return
-        storyBox = self.openWindow(350, 300)
-        storyBox = pygame.transform.scale(self.storyBox.copy(),
+        storyBoxWin = self.openWindow(350, 300)
+        storyBox = pygame.transform.scale(storyBoxWin,
                                           (int(ceil(self.storyBox.get_width() * const.scaleFactor)),
                                            int(ceil(self.storyBox.get_height() * const.scaleFactor))))
-
         msg_ = text.Text(msg, os.getcwd() + "/FONTS/devinne.ttf", 14, colors.white, colors.gold, True, 30)
-        storyBox.blit(msg_, ((storyBox.get_width() / 2) - (msg_.get_width() / 2),
-                             (storyBox.get_height() / 2) - (msg_.get_height() / 2) + 41))
-        self.screen.blit(storyBox, (0, 41))
 
-        # TODO remake this
-        # self.Display.displayOneFrame(self.interface, self.FX)
+        is_stuck_on_popup = True
+        while is_stuck_on_popup:
+            # -------------------------
+            # update-like Chunk of code
+            # -------------------------
+            for ev in pygame.event.get():  # previously,game used pygame.event.wait().type != pygame.MOUSEBUTTONDOWN ...
+                if ev.type == pygame.MOUSEBUTTONDOWN:
+                    is_stuck_on_popup = False
+            storyBox.blit(msg_, ((storyBox.get_width() / 2) - (msg_.get_width() / 2),
+                                 (storyBox.get_height() / 2) - (msg_.get_height() / 2) + 41))
+            self.screen.blit(storyBox, (0, 41))
+            # TODO remake this
+            self.Display.displayOneFrame(self.interface, self.FX)
 
-        # while pygame.event.wait().type != pygame.MOUSEBUTTONDOWN:
-        #     pass
+            pyv.flip()  # we need to updtae gfx mem
 
     def getStatsTextLine(self, line):
         graphicElements = []

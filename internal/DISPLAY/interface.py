@@ -2,11 +2,14 @@ import math
 import os
 from math import ceil
 
-import pygame
+import pyved_engine as pyv
 
 from ..DISPLAY import text
 from ..IMG import images
 from ..UTIL import const, colors, load_image, button
+
+
+pygame = pyv.pygame
 
 
 class Interface:
@@ -162,29 +165,40 @@ class Interface:
 
     # displays message along with image of face
     def npcMessage(self, message, img):
-        # self.SFX.play(3)
+        # ------------------------
+        # init-like Chunck of code
+        # ------------------------
         msgText = text.Text(message, os.getcwd() + "/FONTS/devinne.ttf", 18, colors.white, colors.gold, True, 18)
-        for i in range(0, 255, 8):
-            borderBox = pygame.Surface((msgText.get_width() + int(ceil(img.get_width() * const.scaleFactor)) + int(
-                ceil(20 * const.scaleFactor)),
-                                        msgText.get_height() + int(ceil(img.get_width() * const.scaleFactor))))
-            borderBox.fill(colors.grey)
-            # borderBox.blit(msgText, (int(ceil(50*const.scaleFactor)), int(ceil(10*const.scaleFactor))) )
-            borderBox.set_alpha(int(ceil(i * 0.1)))
-            msgText.set_alpha(i)
-            self.screen.blit(borderBox,
-                             (self.screen.get_width() / 2 - borderBox.get_width() / 2, 150))
-            self.screen.blit(pygame.transform.scale(img,
-                                                    (int(ceil(img.get_width() * const.scaleFactor)),
-                                                     int(ceil(img.get_width() * const.scaleFactor)))),
-                             (self.screen.get_width() / 2 - borderBox.get_width() / 2 + int(
-                                 ceil(10 * const.scaleFactor)),
-                              150 + int(ceil(10 * const.scaleFactor))))
-            self.screen.blit(msgText,
-                             ((self.screen.get_width() / 2 - borderBox.get_width() / 2) + int(
-                                 ceil(50 * const.scaleFactor)), 150))
-            pygame.display.flip()
-        while (pygame.event.wait().type != pygame.MOUSEBUTTONDOWN): pass
+        def paint_stuff(target_surf):
+            for i in range(0, 255, 8):
+                borderBox = pygame.Surface((msgText.get_width() + int(ceil(img.get_width() * const.scaleFactor)) + int(
+                    ceil(20 * const.scaleFactor)),
+                                            msgText.get_height() + int(ceil(img.get_width() * const.scaleFactor))))
+                borderBox.fill(colors.grey)
+                # borderBox.blit(msgText, (int(ceil(50*const.scaleFactor)), int(ceil(10*const.scaleFactor))) )
+                borderBox.set_alpha(int(ceil(i * 0.1)))
+                msgText.set_alpha(i)
+                target_surf.blit(borderBox,
+                                 (target_surf.get_width() / 2 - borderBox.get_width() / 2, 150))
+                target_surf.blit(pygame.transform.scale(img,
+                                                        (int(ceil(img.get_width() * const.scaleFactor)),
+                                                         int(ceil(img.get_width() * const.scaleFactor)))),
+                                 (target_surf.get_width() / 2 - borderBox.get_width() / 2 + int(
+                                     ceil(10 * const.scaleFactor)),
+                                  150 + int(ceil(10 * const.scaleFactor))))
+                target_surf.blit(msgText,
+                                 ((target_surf.get_width() / 2 - borderBox.get_width() / 2) + int(
+                                     ceil(50 * const.scaleFactor)), 150))
+        blocking_substate = True
+        while blocking_substate:
+            # --------------------------
+            # update-like Chunck of code
+            # --------------------------
+            for ev in pygame.event.get():  # previously,game used pygame.event.wait().type != pygame.MOUSEBUTTONDOWN ...
+                if ev.type == pygame.MOUSEBUTTONDOWN:
+                    blocking_substate = False
+            paint_stuff(self.screen)
+            pyv.flip()
 
     # same as npcMessage but returns yes/no input
     def npcDialog(self, message, img=None):
