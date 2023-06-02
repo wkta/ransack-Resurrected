@@ -32,6 +32,8 @@ class game:
 
     def __init__(self, images, screen, clock, iFace, FX, iH, titleScreen, SFX, myWorldBall,
                  loadTicker=None, loadHero=None, loadWorld=None, loadDirector=None):
+        self.neostate = None  # will contain 'mainloop' soon...
+
         self.Display = display.Display(screen, images)
         self.FX = FX
         self.SFX = SFX
@@ -542,10 +544,20 @@ class game:
         self.updateSprites()
         self.Display.displayOneFrame(self.myInterface, self.FX, self.gameBoard, self, self.myMap.type in const.darkMaps)
 
-    def mainLoop(self):
-        print('--- ds mainLoop')
-        clock = pygame.time.Clock()
+    def launch_game(self):
 
+        if self.neostate == 'mainloop':
+            self.mainloop_init()
+            while self.gameOn:
+                self.mainloop_update()
+
+            self.myInterface.state = 'mainmenu'
+            return self.won
+
+        else:
+            raise NotImplementedError
+
+    def mainloop_init(self):
         self.visibleNPCs = []
         if not self.Director.getEvent(0):
             self.myMenu.displayStory(
@@ -557,36 +569,33 @@ class game:
         self.Display.redrawXMap(self.myMap, 2)
         self.updateSprites()
         self.Display.drawSprites(self.myHero, self.myMap, self.gameBoard, self, animated=False)
+        self.myclock = pygame.time.Clock()
 
-        while self.gameOn:
-
-            if not self.myHero.moveQueue.isEmpty():
-                self.move(self.myHero.moveFromQueue())
-            else:
-                for event in pygame.event.get():
-                    event_ = self.inputHandler.getCmd(event)
+    def mainloop_update(self):
+        if not self.myHero.moveQueue.isEmpty():
+            self.move(self.myHero.moveFromQueue())
+        else:
+            for event in pygame.event.get():
+                event_ = self.inputHandler.getCmd(event)
+                self.event_handler(event_)
+            if pygame.mouse.get_pressed()[0]:
+                event_ = self.inputHandler.getCmd(None)
+                # don't want rapid repeats of action commands
+                if event_ in [pygame.K_UP,
+                              pygame.K_DOWN,
+                              pygame.K_LEFT,
+                              pygame.K_RIGHT, ]:
                     self.event_handler(event_)
-                if pygame.mouse.get_pressed()[0]:
-                    event_ = self.inputHandler.getCmd(None)
-                    # don't want rapid repeats of action commands
-                    if event_ in [pygame.K_UP,
-                                  pygame.K_DOWN,
-                                  pygame.K_LEFT,
-                                  pygame.K_RIGHT, ]:
-                        self.event_handler(event_)
 
-            if self.myMap.update(len(self.NPCs)) == 'newNPCs':
-                self.addNPCs(self.myMap, 'new')
+        if self.myMap.update(len(self.NPCs)) == 'newNPCs':
+            self.addNPCs(self.myMap, 'new')
 
-            if self.updateNPCs() or self.myHero.moving:
-                self.Display.drawSprites(self.myHero, self.myMap, self.gameBoard, self, self.myHero.dir, animated=True)
-                # self.Display.drawSprites(self.myHero, self.myMap, self.gameBoard, self, None, animated=True)
+        if self.updateNPCs() or self.myHero.moving:
+            self.Display.drawSprites(self.myHero, self.myMap, self.gameBoard, self, self.myHero.dir, animated=True)
+            # self.Display.drawSprites(self.myHero, self.myMap, self.gameBoard, self, None, animated=True)
 
-            self.displayOneFrame()
-            # pygame.time.wait(10)
-            # -- refresh screen
-            pyv.flip()
-            clock.tick(60)
-
-        self.myInterface.state = 'mainmenu'
-        return self.won
+        self.displayOneFrame()
+        # pygame.time.wait(10)
+        # -- refresh screen
+        pyv.flip()
+        self.myclock.tick(60)

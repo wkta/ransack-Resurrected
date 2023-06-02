@@ -126,7 +126,10 @@ def launchNewGame(titleScreen):
     FX.fadeOut(0)
 
     iFace.state = 'game'
-    if newGame.mainLoop():
+    newGame.neostate = 'mainloop'
+    wongame = newGame.launch_game()
+
+    if wongame:
         endScreen(newGame, "You Win!")
     else:
         endScreen(newGame, "Game Over.")
