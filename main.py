@@ -17,13 +17,14 @@ def brokendef():
 pyv.pygame.display.flip = brokendef
 
 
+from internal.classes.GlGameModel import GlGameModel
 from internal.DISPLAY import interface, effects, menu, display, text
 from internal.HERO import hero_creator
 from internal.IMG import images
 from internal.SND import sfx
 from internal.UTIL import colors, load_image, button
 from internal.UTIL import inputHandler
-from internal.classes import game
+from internal.gamestates import MainState
 
 
 pygame = pyv.pygame
@@ -104,11 +105,11 @@ def endScreen(game, msg):
 def gameloop(game_obj):
     # self.myMenu.displayStory(
     # self.Director.setEvent(0)
-    game_obj.enter_state()
-    game_obj.curr_updatefunc = game_obj.update_chunk
+    game_obj.curr_state.enter_state()
+    game_obj.curr_updatefunc = game_obj.curr_state.update_chunk
 
     while game_obj.gameOn:
-        while game_obj.curr_state == game_obj.neostate:
+        while game_obj.curr_state_name == game_obj.neostate:
             game_obj.curr_updatefunc()
 
         # this was not working anyway
@@ -118,8 +119,9 @@ def gameloop(game_obj):
         st_name = game_obj.neostate
         game_obj.curr_initfunc = game_obj.states[st_name].enter_state
         game_obj.curr_initfunc()
+
         game_obj.curr_updatefunc = game_obj.states[st_name].update_chunk
-        game_obj.curr_state = st_name
+        game_obj.curr_state_name = st_name
 
     # TODO fix this, endgame condition
     # return self.won
@@ -147,7 +149,8 @@ def init_game_model():
         )
         y += 75
 
-    game_model = game.game(images, screen, clock, iFace, FX, iH, screen, SFX, myWorldBall)
+    game_model = GlGameModel(clock, screen, images, iFace, FX, iH, SFX, myWorldBall)
+    game_model.set_state('game')
     print('CC')
 
 
@@ -248,8 +251,9 @@ def main():
         if selected_button == 'Begin New Game':
             char_creator = hero_creator.Creator()
             char_creator.mainLoop(screen)  # /!\ blocking
-            game_model.set_hero(char_creator.created_hero)
-            game_model.pre_launch_game()
+            game_model.curr_state.set_hero(char_creator.created_hero)
+            game_model.curr_state.pre_launch_game()
+
             print('Begin New Game {}x{}'.format(scr_size[0], scr_size[1]))
             gameloop(game_model)  # ver 3
             # ver 2 -- start_new_game(screen)

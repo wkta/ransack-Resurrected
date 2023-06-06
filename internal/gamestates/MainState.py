@@ -3,70 +3,28 @@ import os
 import pickle
 import random
 
-import pygame
 import pyved_engine as pyv
 
-from . import battle, enemy, shop, tavern, townhall, director
 from .. import OBJ
-from ..DISPLAY import display, menu
-from ..DISPLAY.menu import StoryState
 from ..HERO import hero
 from ..MAP import world
 from ..NPC import npcspawner
-from ..SCRIPTS import enemyScr, mapScr
-from ..UTIL import ticker, const, colors, misc, astar
+from ..UTIL import const, astar, colors
+from ..classes import shop, tavern, townhall, battle, enemy
 
 
-# import OBJ
-# from IMG import images
-# from HERO import hero
-# from DISPLAY import display, interface, menu
-# from SCRIPTS import mapScr, enemyScr
-# from NPC import npcspawner
-# from SND import sfx
-# from MAP import world, generalmap, mapgen
-# from ..UTIL import ticker, const, colors, load_image, misc, astar
-# from math import ceil, floor
+pygame = pyv.pygame
 
 
-class game:
+class MainState:
 
-    def set_hero(self, av_obj):
-        if self.loaded_game:
-            (x, y) = self.myMap.heroStart
-            self.myHero = hero.hero(av_obj,
-                                    (x * const.blocksize,
-                                     y * const.blocksize)
-                                    )
-        else:
-            self.myHero = hero.hero(av_obj)
-
-    def __init__(self, images, screen, clock, interface_obj, FX, iH, titleScreen, SFX, myWorldBall,
-                 loadTicker=None, loadWorld=None, loadDirector=None):
-        self.Display = display.Display(screen, images)
+    def __init__(self, clock, screen, disp_obj, interface_obj, director, FX, iH, SFX, worldBall, ref_ticker, loadWorld, game_model):
+        self.ref_game = game_model
+        self.Display = disp_obj
         self.FX = FX
         self.SFX = SFX
-        if loadTicker is None:
-            self.Ticker = ticker.Ticker()
-        else:
-            self.Ticker = loadTicker
-        if loadDirector is None:
-            self.Director = director.Director()
-        else:
-            self.Director = loadDirector
-
-        # ------------------------
-        #  ajouts
-        # ------------------------
-        self.story_message = None
-        self.curr_state = None
-        self.neostate = 'game'  # if two are different then gamestate changes!
-        # NB. Tom:
-        # When should we instantiate other gamestates?
-        self.states = {
-            'game': self,
-            'story': StoryState(self.Display, interface_obj, FX, self.Director, self),
-        }
+        self.Ticker = ref_ticker
+        self.Director = director
 
         # ------------------------
         #  reste
@@ -79,23 +37,23 @@ class game:
         # self.levelDepth = levelDepth
 
         self.inputHandler = iH
-        FX.displayLoadingMessage(titleScreen, 'Loading world...')
+        FX.displayLoadingMessage(pyv.get_surface(), 'Loading world...')
         # myWorldBall is the game world which always is loaded
         # loadWorld is the levels which have been generated ingame and saved
         self.myMap = None
         self.loaded_game = False
         if loadWorld is None:
 
-            self.myWorld = world.World('game', myWorldBall)
+            self.myWorld = world.World('game', worldBall)
 
             self.myMap = self.myWorld.initialMap
             self.myWorld.currentMap = self.myMap
             self.loaded_game = True
         else:
-            self.myWorld = world.World('game', myWorldBall, loadWorld)
+            self.myWorld = world.World('game', worldBall, loadWorld)
             self.myMap = self.myWorld.currentMap
 
-        FX.displayLoadingMessage(titleScreen, 'Loading game engine...')
+        FX.displayLoadingMessage(pyv.get_surface(), 'Loading game engine...')
         self.NPCs = []
         self.screen = screen
         self.gameBoard = pygame.Surface([300, 300])
@@ -103,13 +61,22 @@ class game:
         # self.gameBoard = self.gameBoard.convert(32)
 
         # this is true while player is in a particular game
-        self.gameOn = True
         self.DIM = const.DIM
 
         self.myInterface = interface_obj
 
         self.clock = clock
         self.inputHandler = iH
+
+    def set_hero(self, av_obj):
+        if self.loaded_game:
+            (x, y) = self.myMap.heroStart
+            self.myHero = hero.hero(av_obj,
+                                    (x * const.blocksize,
+                                     y * const.blocksize)
+                                    )
+        else:
+            self.myHero = hero.hero(av_obj)
 
     def pre_launch_game(self):
         self.addShops()
@@ -195,8 +162,8 @@ class game:
         # self.FX.scrollFromCenter(gameBoard_old, self.gameBoard)
 
         # tom replacement
-        self.states['story'].set_message(self.Director.getNarrartionEventByMapName(self.myMap.getName()))
-        self.neostate = 'story'
+        self.ref_game.states['story'].set_message(self.Director.getNarrartionEventByMapName(self.myMap.getName()))
+        self.ref_game.neostate = 'story'
         # self.myMenu.displayStory(self.Director.getNarrartionEventByMapName(self.myMap.getName()))
 
     # takes screen shot and saves as bmp in serial fashion, beginning with 1
@@ -494,7 +461,7 @@ class game:
         lootItems = []
         lootItems.append((const.GOLD, random.randrange(enemyScr.lootDict[e] - 3,
                                                        enemyScr.lootDict[e] + 3)))
-        if misc.rollDie(0, 4):
+        if random.randint(0, 4):
             lootItems.append((const.PARCHMENT, random.choice(mapScr.parchByLevel[self.myWorld.currentMap.level])))
         return lootItems
 
@@ -597,8 +564,8 @@ class game:
             story_message = "So here you are in the same town, in front of the same house you've lived in " \
                             "forever. There's gotta be something else out there. It's time to go find it. " \
                             "Welcome to Ransack."
-            self.states['story'].set_message(story_message)
-            self.neostate = 'story'
+            self.ref_game.states['story'].set_message(story_message)
+            self.ref_game.neostate = 'story'
             return  # neostate will notify a next state is ready
 
         if not self.myHero.moveQueue.isEmpty():
