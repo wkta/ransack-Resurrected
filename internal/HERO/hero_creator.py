@@ -182,7 +182,8 @@ class Creator:
                         if android:
                             android.show_keyboard()
                         self.name = self.getInput(screen, '')
-                        return self.getBall()
+                        self.created_hero = self.getBall()
+                        return
                 elif event.type == pygame.QUIT:
                     os.sys.exit()
                 elif event.type == pygame.KEYDOWN:
@@ -193,17 +194,13 @@ class Creator:
                             self.show_box2 = True
                             self.name = 'NoNameAvatar'  # TODO fix logic to input : self.getInput(screen, '')
                         else:
-
-                            return self.getBall()
-
+                            self.created_hero = self.getBall()
+                            return
                     elif event.key == pygame.K_ESCAPE:
                         os.sys.exit()
-
             self.refresh_screen(screen, 'stats')
             if hasattr(self, 'show_box2') and self.show_box2:
                 self.refresh_screen(screen, 'name')
-
             pyv.flip()
-
         while (pygame.event.wait().type != pygame.KEYDOWN):
             pass

@@ -1,21 +1,24 @@
-"""
-ransack-python
-Ransack - a Python based roguelike
-"""
-import gzip
 import os
 import pickle
 import random
 
 import pyved_engine as pyv
 pyv.bootstrap_e()
+
+
+# --------------------
+#  on purpose disabling pygame.display.flip,
+#  to make sure that we always call pyv.flip() -> use the custom game engine!
+# --------------------
 def brokendef():
     raise NotImplementedError
 
+
 pyv.pygame.display.flip = brokendef
 
+
 from internal.DISPLAY import interface, effects, menu, display, text
-from internal.HERO import creator
+from internal.HERO import hero_creator
 from internal.IMG import images
 from internal.SND import sfx
 from internal.UTIL import colors, load_image, button
@@ -25,55 +28,35 @@ from internal.classes import game
 
 pygame = pyv.pygame
 android = False
+game_model = None
+mixer = None
+# Set the height and width of the screen
+# cfac = 1.0
+# screenSize = [1280, 720]  # [720, 700]
+# screen = pygame.display.set_mode(screenSize)
+screen = scr_size = None
+stored_avatar = None
 
 # const.setScaleFactor(1)
 pyv.init(1)
 # pygame.init()
-
 pygame.mixer.init()
 mixer = pygame.mixer
-# Set the height and width of the screen
-#cfac = 1.0
-# screenSize = [1280, 720]  # [720, 700]
-# screen = pygame.display.set_mode(screenSize)
-
-screen = pyv.get_surface()
-screenSize = screen.get_size()
-
-if not pygame.font:
-    print('>>>>>>>>> Warning, fonts disabled')
-
 pygame.display.set_caption("Ransack")
-# pygame.init()
 pygame.key.set_repeat(100, 100)
-
 images.preload_all()
-
 clock = pygame.time.Clock()
 random.seed(os.urandom(1))
-FX = effects.effects(clock, screen)
+FX = iH = iFace = None
 SFX = sfx.sfx(mixer)
-C = creator.Creator()
-iH = inputHandler.inputHandler(FX)
-iFace = interface.Interface(screen, iH)
-
 D = display.Display(screen, images)
+
 # this is the static game world i.e. non-generated world
 # loaded once at startup and used thereafter
 myWorldBall = None
 selection = 0
 options = ['Begin New Game', 'Load Saved Game', 'Credits', 'Exit']
 buttons = []
-
-if pygame.font:
-    font = pygame.font.Font("./FONTS/chancery.ttf", 60)
-y = 350
-for o in options:
-    line = font.render(o, 1, colors.white, colors.black)
-    buttons.append(
-        button.Button(((screen.get_width() / 2) - (line.get_width() / 2), y), o)
-    )
-    y += 75
 ifaceImg, r = load_image.load_image(os.path.join('MENU', 'interface_m.png'), None)
 logo, r = load_image.load_image('logo.png', None)
 
@@ -118,36 +101,68 @@ def endScreen(game, msg):
         pass
 
 
-def launchNewGame(titleScreen):
-    print('launchNewGame')
-    newGame = game.game(
-        images, screen, clock, iFace, FX, iH, titleScreen, SFX, myWorldBall, loadHero=C.mainLoop(screen)
-    )
-    FX.fadeOut(0)
+def gameloop(game_obj):
+    # self.myMenu.displayStory(
+    # self.Director.setEvent(0)
+    game_obj.enter_state()
+    game_obj.curr_updatefunc = game_obj.update_chunk
 
-    iFace.state = 'game'
-    newGame.neostate = 'game'
+    while game_obj.gameOn:
+        while game_obj.curr_state == game_obj.neostate:
+            game_obj.curr_updatefunc()
 
-    wongame = newGame.launch_game()
+        # this was not working anyway
+        # self.myInterface.state = 'mainmenu'
 
-    if wongame:
-        endScreen(newGame, "You Win!")
-    else:
-        endScreen(newGame, "Game Over.")
-    FX.fadeOut(0)
+        # game state change
+        st_name = game_obj.neostate
+        game_obj.curr_initfunc = game_obj.states[st_name].enter_state
+        game_obj.curr_initfunc()
+        game_obj.curr_updatefunc = game_obj.states[st_name].update_chunk
+        game_obj.curr_state = st_name
+
+    # TODO fix this, endgame condition
+    # return self.won
 
 
-def loadWorld():
-    try:
-        if android:
-            pass
-        loadedWorld = gzip.GzipFile(os.getcwd() + '/MAP/WORLDS/MainWorld', 'rb', 1)
-        myWorldBall = pickle.load(loadedWorld)
-        loadedWorld.close()
-        # self.installWorldBall(ball, context)
-    except IOError as err:
-        print('Cannot load world: {}'.format(err))
-        return
+def init_game_model():
+    global screen, scr_size, FX, iH, iFace
+    global buttons, game_model, stored_avatar
+
+    screen = pyv.get_surface()
+    scr_size = screen.get_size()
+
+    # - prelim -
+    FX = effects.effects(clock, screen)
+    iH = inputHandler.inputHandler(FX)
+    iFace = interface.Interface(screen, iH)
+
+    y = 350
+    if pygame.font:
+        font = pygame.font.Font("./FONTS/chancery.ttf", 60)
+    for o in options:
+        line = font.render(o, 1, colors.white, colors.black)
+        buttons.append(
+            button.Button(((screen.get_width() / 2) - (line.get_width() / 2), y), o)
+        )
+        y += 75
+
+    game_model = game.game(images, screen, clock, iFace, FX, iH, screen, SFX, myWorldBall)
+    print('CC')
+
+
+# - deprecated?
+# def loadWorld():
+#     try:
+#         if android:
+#             pass
+#         loadedWorld = gzip.GzipFile(os.getcwd() + '/MAP/WORLDS/MainWorld', 'rb', 1)
+#         myWorldBall = pickle.load(loadedWorld)
+#         loadedWorld.close()
+#         # self.installWorldBall(ball, context)
+#     except IOError as io_err:
+#         print('Cannot load world: {}'.format(io_err))
+#         return
 
 
 def loadSavedGame(titleScreen):
@@ -174,37 +189,6 @@ def loadSavedGame(titleScreen):
     #     print('loadSavedGame error: {}'.format(err))
 
 
-def mouseHandler(m):
-    (mx, my) = pygame.mouse.get_pos()
-    if (230 <= mx < 480) and (375 <= my < 430):
-        launchNewGame()
-    elif (230 <= mx < 480) and (430 <= my < 485):
-        loadSavedGame()
-    elif (230 <= mx < 300) and (485 <= my < 540):
-        os.sys.exit()
-
-
-def updateDisplay():
-    titleScreen = pygame.Surface((screenSize[0], screenSize[1]))
-    menuBox = pygame.Surface((300, 300))
-    menuBox.fill(colors.black)
-    menuBox.set_colorkey(colors.black)
-    clock.tick(20)
-    screen.fill(colors.black)
-    screen.blit(titleScreen, (0, 0))
-    screen.blit(logo, ((screen.get_width() // 2) - (logo.get_width() // 2), 100))
-    if pygame.font:
-        font = pygame.font.Font("./FONTS/SpinalTfanboy.ttf", 48)
-        for b in buttons:
-            screen.blit(b.img, (b.locX, b.locY))
-            # line = font.render(options[i], 1, colors.white, colors.black)
-            # menuBox.blit(line, (30, (i * line.get_height())))
-
-    # menuBox = pygame.Surface( (450,450) )
-    # menuBox.fill( colors.black )
-    # menuBox.set_colorkey(colors.black)
-
-
 def showCredits():
     creditsMenu = menu.menu(screen, iH, D, iFace, FX, SFX)
     creditsMenu.displayStory(
@@ -228,45 +212,70 @@ def showCredits():
         " enhancenments please drop me a line!")
 
 
+def paint():
+    titleScreen = pygame.Surface((scr_size[0], scr_size[1]))
+    menuBox = pygame.Surface((300, 300))
+    menuBox.fill(colors.black)
+    menuBox.set_colorkey(colors.black)
+    clock.tick(20)
+    screen.fill(colors.black)
+    screen.blit(titleScreen, (0, 0))
+    screen.blit(logo, ((screen.get_width() // 2) - (logo.get_width() // 2), 100))
+    if pygame.font:
+        font = pygame.font.Font("./FONTS/SpinalTfanboy.ttf", 48)
+        for b in buttons:
+            screen.blit(b.img, (b.locX, b.locY))
+            # line = font.render(options[i], 1, colors.white, colors.black)
+            # menuBox.blit(line, (30, (i * line.get_height())))
+    # menuBox = pygame.Surface( (450,450) )
+    # menuBox.fill( colors.black )
+    # menuBox.set_colorkey(colors.black)
+
+
 def main():
+    global game_model
+    init_game_model()
     while True:
+        selected_button = None
+
         for event in pygame.event.get():
             if event.type == pygame.MOUSEBUTTONDOWN:
-                selection = None
                 (mX, mY) = pygame.mouse.get_pos()
                 for b in buttons:
                     if b.hit(mX, mY):
-                        selection = b.msg
-                if selection == 'Begin New Game':
-                    print('Begin New Game {}x{}'.format(screenSize[0],
-                                                        screenSize[1]))
-                    launchNewGame(screen) #  pygame.Surface(screenSize[0], screenSize[1])
-                elif selection == 'Load Saved Game':
-                    loadSavedGame(pygame.Surface((screenSize[0],
-                                                  screenSize[1])))
-                elif selection == 'Credits':
-                    showCredits()
-                elif selection == 'Exit':
-                    FX.fadeOut(0)
-                    os.sys.exit()
-                elif selection is None:
-                    pass
-        font = pygame.font.Font(os.getcwd() + "/FONTS/courier.ttf", 28)
-        if android:
-            screen.blit(font.render(str(android.get_dpi()), 1, colors.white,
-                                    colors.black), (0, 0))
-        updateDisplay()
+                        selected_button = b.msg
+        # logic update
+        if selected_button == 'Begin New Game':
+            char_creator = hero_creator.Creator()
+            char_creator.mainLoop(screen)  # /!\ blocking
+            game_model.set_hero(char_creator.created_hero)
+            game_model.pre_launch_game()
+            print('Begin New Game {}x{}'.format(scr_size[0], scr_size[1]))
+            gameloop(game_model)  # ver 3
+            # ver 2 -- start_new_game(screen)
+            # ver 1 -- pygame.Surface(screenSize[0], screenSize[1])
+        elif selection == 'Load Saved Game':
+            loadSavedGame(pygame.Surface((scr_size[0], scr_size[1])))
+        elif selection == 'Credits':
+            showCredits()
+        elif selection == 'Exit':
+            FX.fadeOut(0)
+            os.sys.exit()
+
+        # font = pygame.font.Font(os.getcwd() + "/FONTS/courier.ttf", 28)
+        # if android:
+        #     screen.blit(font.render(str(android.get_dpi()), 1, colors.white,
+        #                             colors.black), (0, 0))
+        paint()
         # pygame.display.flip()
         pyv.flip()
 
+
 if __name__ == '__main__':
     from internal import MAP as legacyMAP
-
     # fix imports for piclk ok
     import sys
-
     sys.modules['MAP'] = legacyMAP
-
     try:
         # '''
         # if android:
@@ -285,5 +294,4 @@ if __name__ == '__main__':
     except IOError as err:
         print('Cannot load MainWorld: {}'.format(err))
         os.sys.exit()
-
     main()

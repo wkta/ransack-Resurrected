@@ -31,8 +31,18 @@ from ..UTIL import ticker, const, colors, misc, astar
 
 class game:
 
-    def __init__(self, images, screen, clock, iFace, FX, iH, titleScreen, SFX, myWorldBall,
-                 loadTicker=None, loadHero=None, loadWorld=None, loadDirector=None):
+    def set_hero(self, av_obj):
+        if self.loaded_game:
+            (x, y) = self.myMap.heroStart
+            self.myHero = hero.hero(av_obj,
+                                    (x * const.blocksize,
+                                     y * const.blocksize)
+                                    )
+        else:
+            self.myHero = hero.hero(av_obj)
+
+    def __init__(self, images, screen, clock, interface_obj, FX, iH, titleScreen, SFX, myWorldBall,
+                 loadTicker=None, loadWorld=None, loadDirector=None):
         self.Display = display.Display(screen, images)
         self.FX = FX
         self.SFX = SFX
@@ -55,7 +65,7 @@ class game:
         # When should we instantiate other gamestates?
         self.states = {
             'game': self,
-            'story': StoryState(self.Display, iFace, FX, self.Director, self),
+            'story': StoryState(self.Display, interface_obj, FX, self.Director, self),
         }
 
         # ------------------------
@@ -73,19 +83,17 @@ class game:
         # myWorldBall is the game world which always is loaded
         # loadWorld is the levels which have been generated ingame and saved
         self.myMap = None
+        self.loaded_game = False
         if loadWorld is None:
+
             self.myWorld = world.World('game', myWorldBall)
+
             self.myMap = self.myWorld.initialMap
             self.myWorld.currentMap = self.myMap
-            (x, y) = self.myMap.heroStart
-            self.myHero = hero.hero(loadHero,
-                                    (x * const.blocksize,
-                                     y * const.blocksize)
-                                    )
+            self.loaded_game = True
         else:
             self.myWorld = world.World('game', myWorldBall, loadWorld)
             self.myMap = self.myWorld.currentMap
-            self.myHero = hero.hero(loadHero)
 
         FX.displayLoadingMessage(titleScreen, 'Loading game engine...')
         self.NPCs = []
@@ -98,14 +106,15 @@ class game:
         self.gameOn = True
         self.DIM = const.DIM
 
-        self.myInterface = iFace
+        self.myInterface = interface_obj
+
+        self.clock = clock
+        self.inputHandler = iH
+
+    def pre_launch_game(self):
         self.addShops()
         self.addNPCs(self.myMap)
-
-        self.myBattle = battle.battle(self.screen, iH, None)  # self.myMenu)
-        self.clock = clock
-
-        self.inputHandler = iH
+        self.myBattle = battle.battle(self.screen, self.inputHandler, None)  # self.myMenu)
         self.state = 'overworld'
         self.won = False
 
@@ -243,10 +252,13 @@ class game:
             # equipment menu
             self.myMenu.equipmentMenu(self)
         elif event == pygame.K_ESCAPE:
-            if self.myInterface.npcDialog('Are you sure you want to quit?', self.myHero.images[2]) == 'Yes':
+            # make it possible to exit the game!
+            self.myInterface.yes_no_dialog_loop(
+                    'Are you sure you want to quit?', self.myHero.images[2]
+            )
+            if self.myInterface.clicked_option == 'Yes':
                 os.sys.exit()
-            else:
-                pass
+
         else:
             if not self.myHero.moving:
                 # try:
@@ -616,26 +628,3 @@ class game:
         # -- refresh screen
         pyv.flip()
         self.clock.tick(60)
-
-    def launch_game(self):
-        # self.myMenu.displayStory(
-        # self.Director.setEvent(0)
-
-        self.enter_state()
-        self.curr_updatefunc = self.update_chunk
-
-        while self.gameOn:
-            while self.curr_state == self.neostate:
-                print('on update qq ch via ', self.curr_updatefunc)
-                self.curr_updatefunc()
-            # this was not working anyway
-            # self.myInterface.state = 'mainmenu'
-
-            # change state
-            self.curr_initfunc = self.states[self.neostate].enter_state
-            self.curr_initfunc()
-            self.curr_updatefunc = self.states[self.neostate].update_chunk
-            self.curr_state = self.neostate
-
-        # TODO fix this, endgame condition
-        # return self.won

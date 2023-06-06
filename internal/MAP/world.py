@@ -19,6 +19,7 @@ class World:
             # number of maps in array
             # by default, world must have at least 1 map
             self.worldSize = 1
+
         elif context == 'game':
             if loadWorld is not None:
                 self.installWorldBall(context, myWorldBall, loadWorld, )
@@ -171,7 +172,7 @@ class World:
             else:
                 return False
         elif dir == 1:  # south
-            if self.currentMap.neighbors[1] is not '':
+            if self.currentMap.neighbors[1] != '':
                 if self.getMapByName(self.currentMap.neighbors[1]).getTileFG(loc[0], 0) in range(const.BRICK1):
                     self.currentMap = self.getMapByName(self.currentMap.neighbors[1])
                     return loc[0], 0
@@ -180,7 +181,7 @@ class World:
             else:
                 return False
         elif dir == 2:  # east
-            if self.currentMap.neighbors[2] is not '':
+            if self.currentMap.neighbors[2] != '':
                 if self.getMapByName(self.currentMap.neighbors[2]).getTileFG(0, loc[1]) in range(const.BRICK1):
                     self.currentMap = self.getMapByName(self.currentMap.neighbors[2])
                     return 0, loc[1]

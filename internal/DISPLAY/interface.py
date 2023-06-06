@@ -14,6 +14,8 @@ pygame = pyv.pygame
 
 class Interface:
     def __init__(self, screen, iH):
+        self.clicked_option = None
+
         self.textBox1 = pygame.Surface((100, 250))
         self.textBox1.fill(colors.gold)
         self.textBox2 = pygame.Surface((300, 100))
@@ -201,7 +203,9 @@ class Interface:
             pyv.flip()
 
     # same as npcMessage but returns yes/no input
-    def npcDialog(self, message, img=None):
+    def yes_no_dialog_loop(self, message, img=None):
+        self.clicked_option = None
+
         # self.SFX.play(3)
         msgText = text.Text(message, os.getcwd() + "/FONTS/devinne.ttf", 18, colors.white, colors.gold, True)
         if img == None:
@@ -241,7 +245,7 @@ class Interface:
                                  ((self.screen.get_width() / 2 - borderBox.get_width() / 2), 150))
             for b in buttons:
                 self.screen.blit(b.img, (b.locX, b.locY))
-            pygame.display.flip()
+            pyv.flip()
 
         while True:
             for e in pygame.event.get():
@@ -252,7 +256,8 @@ class Interface:
                     (x, y) = pygame.mouse.get_pos()
                     for b in buttons:
                         if b.hit(x, y):
-                            return b.msg
+                            self.clicked_option = b.msg
+                            return
 
     def boxMessage(self, message):
         # TODO fix so the msg is still shown
