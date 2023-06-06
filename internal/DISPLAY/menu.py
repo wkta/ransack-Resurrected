@@ -1,6 +1,6 @@
+import os
 from math import ceil, floor
 
-import os
 import pygame
 
 from ..DISPLAY import text, menuBox
@@ -218,10 +218,10 @@ class menu:
         self.screen.blit(storyBox, (0, 41))
 
         # TODO remake this
-        # self.Display.displayOneFrame(self.interface, self.FX)
+        self.Display.displayOneFrame(self.interface, self.FX)
 
-        # while pygame.event.wait().type != pygame.MOUSEBUTTONDOWN:
-        #     pass
+        while pygame.event.wait().type != pygame.MOUSEBUTTONDOWN:
+            pass
 
     def getStatsTextLine(self, line):
         graphicElements = []

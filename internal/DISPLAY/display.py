@@ -1,4 +1,5 @@
 import pygame
+import pyved_engine
 
 from ..SCRIPTS import mapScr
 from ..UTIL import colors, const
@@ -42,7 +43,7 @@ class Display:
 
         # TODO can we fix the display to not call flip that
         #  many times?
-        # pygame.display.flip()
+        pyved_engine.flip()
 
     def drawShade(self, map, gameBoard):
         """Takes first two coordinates of hero rect, gameBoard and
