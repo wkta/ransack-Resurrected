@@ -9,6 +9,7 @@ import pyved_engine as pyv
 from . import battle, enemy, shop, tavern, townhall, director
 from .. import OBJ
 from ..DISPLAY import display, menu
+from ..DISPLAY.menu import StoryState
 from ..HERO import hero
 from ..MAP import world
 from ..NPC import npcspawner
@@ -32,8 +33,6 @@ class game:
 
     def __init__(self, images, screen, clock, iFace, FX, iH, titleScreen, SFX, myWorldBall,
                  loadTicker=None, loadHero=None, loadWorld=None, loadDirector=None):
-        self.neostate = None  # will contain 'mainloop' soon...
-
         self.Display = display.Display(screen, images)
         self.FX = FX
         self.SFX = SFX
@@ -45,10 +44,31 @@ class game:
             self.Director = director.Director()
         else:
             self.Director = loadDirector
-        self.myMenu = menu.menu(screen, iH, self.Display, iFace, FX, SFX)
-        # self.levelDepth = levelDepth
-        self.inputHandler = iH
 
+        # ------------------------
+        #  ajouts
+        # ------------------------
+        self.story_message = None
+        self.curr_state = None
+        self.neostate = 'game'  # if two are different then gamestate changes!
+        # NB. Tom:
+        # When should we instantiate other gamestates?
+        self.states = {
+            'game': self,
+            'story': StoryState(self.Display, iFace, FX, self.Director, self),
+        }
+
+        # ------------------------
+        #  reste
+        # ------------------------
+        # dont need the following line (anymore),
+        # because we have StoryState object available!
+        # self.myMenu = menu.menu(screen, iH, self.Display, iFace, FX, SFX)
+
+        # useful??
+        # self.levelDepth = levelDepth
+
+        self.inputHandler = iH
         FX.displayLoadingMessage(titleScreen, 'Loading world...')
         # myWorldBall is the game world which always is loaded
         # loadWorld is the levels which have been generated ingame and saved
@@ -82,7 +102,7 @@ class game:
         self.addShops()
         self.addNPCs(self.myMap)
 
-        self.myBattle = battle.battle(self.screen, iH, self.myMenu)
+        self.myBattle = battle.battle(self.screen, iH, None)  # self.myMenu)
         self.clock = clock
 
         self.inputHandler = iH
@@ -130,17 +150,17 @@ class game:
 
     def addShops(self):
         self.Tavern = tavern.Tavern(self.screen, self.myInterface, self.Ticker,
-                                    self.inputHandler, self.myMenu)
+                                    self.inputHandler, None)  # self.myMenu)
         self.Townhall = townhall.Townhall(self.screen, self.myInterface, self.Ticker,
-                                          self.inputHandler, self.myMenu)
+                                          self.inputHandler, None)  # self.myMenu)
         self.Itemshop = shop.itemShop(self.screen, self.myInterface, 'itemshop', self.Ticker,
-                                      self.inputHandler, self.myMenu)
+                                      self.inputHandler, None)  # self.myMenu)
         self.Magicshop = shop.magicShop(self.screen, self.myInterface, 'magicshop', self.Ticker,
-                                        self.inputHandler, self.myMenu)
+                                        self.inputHandler, None)  # self.myMenu)
         self.Blacksmith = shop.Blacksmith(self.screen, self.myInterface, 'blacksmith', self.Ticker,
-                                          self.inputHandler, self.myMenu)
+                                          self.inputHandler, None)  # self.myMenu)
         self.Armory = shop.Armory(self.screen, self.myInterface, 'armory', self.Ticker,
-                                  self.inputHandler, self.myMenu)
+                                  self.inputHandler, None)  # self.myMenu)
 
     def transition(self, loc):
         gameBoard_old = self.gameBoard.copy()
@@ -165,7 +185,10 @@ class game:
         # TODO can i repair transitions?
         # self.FX.scrollFromCenter(gameBoard_old, self.gameBoard)
 
-        self.myMenu.displayStory(self.Director.getNarrartionEventByMapName(self.myMap.getName()))
+        # tom replacement
+        self.states['story'].set_message(self.Director.getNarrartionEventByMapName(self.myMap.getName()))
+        self.neostate = 'story'
+        # self.myMenu.displayStory(self.Director.getNarrartionEventByMapName(self.myMap.getName()))
 
     # takes screen shot and saves as bmp in serial fashion, beginning with 1
     def screenShot(self):
@@ -226,9 +249,9 @@ class game:
                 pass
         else:
             if not self.myHero.moving:
-                #try:
+                # try:
                 return self.move(pygame.key.name(event))
-                #except TypeError as e:
+                # except TypeError as e:
                 #    print('TypeError while trying to move: ', e)
 
     def saveGame(self, fileName):
@@ -385,7 +408,7 @@ class game:
             self.myMap.setEntry((X + moveX) / const.blocksize, (Y + moveY) / const.blocksize, const.NSDOORO)
             self.Display.redrawXMap(self.myMap, l)
             return
-        elif i == -1 or i in list(range(const.BRICK1, 86)) + [const.CHEST,] + [const.OCHEST,] + list(range(128, 216)):
+        elif i == -1 or i in list(range(const.BRICK1, 86)) + [const.CHEST, ] + [const.OCHEST, ] + list(range(128, 216)):
             return
         # dungeon door
         elif i == const.DOOR:
@@ -544,34 +567,28 @@ class game:
         self.updateSprites()
         self.Display.displayOneFrame(self.myInterface, self.FX, self.gameBoard, self, self.myMap.type in const.darkMaps)
 
-    def launch_game(self):
-
-        if self.neostate == 'mainloop':
-            self.mainloop_init()
-            while self.gameOn:
-                self.mainloop_update()
-
-            self.myInterface.state = 'mainmenu'
-            return self.won
-
-        else:
-            raise NotImplementedError
-
-    def mainloop_init(self):
-        self.visibleNPCs = []
-        if not self.Director.getEvent(0):
-            self.myMenu.displayStory(
-                "So here you are in the same town, in front of the same house you've lived in forever. There's gotta be something else out there. It's time to go find it. Welcome to Ransack.")
-            self.Director.setEvent(0)
+    def enter_state(self):
+        self.visibleNPCs = list()
         (pX, pY) = self.myHero.getXY()
         self.myMap.setPlayerXY(pX / const.blocksize, pY / const.blocksize)
         self.myMap.updateWindowCoordinates(self.myHero)
         self.Display.redrawXMap(self.myMap, 2)
         self.updateSprites()
         self.Display.drawSprites(self.myHero, self.myMap, self.gameBoard, self, animated=False)
-        self.myclock = pygame.time.Clock()
+        self.clock = pygame.time.Clock()
 
-    def mainloop_update(self):
+    def update_chunk(self):
+        bv = self.Director.getEvent(0)
+        if not bv:
+            # changing the state!
+            self.neostate = 'story'
+            story_message = "So here you are in the same town, in front of the same house you've lived in " \
+                            "forever. There's gotta be something else out there. It's time to go find it. " \
+                            "Welcome to Ransack."
+            self.states['story'].set_message(story_message)
+            self.neostate = 'story'
+            return  # neostate will notify a next state is ready
+
         if not self.myHero.moveQueue.isEmpty():
             self.move(self.myHero.moveFromQueue())
         else:
@@ -598,4 +615,27 @@ class game:
         # pygame.time.wait(10)
         # -- refresh screen
         pyv.flip()
-        self.myclock.tick(60)
+        self.clock.tick(60)
+
+    def launch_game(self):
+        # self.myMenu.displayStory(
+        # self.Director.setEvent(0)
+
+        self.enter_state()
+        self.curr_updatefunc = self.update_chunk
+
+        while self.gameOn:
+            while self.curr_state == self.neostate:
+                print('on update qq ch via ', self.curr_updatefunc)
+                self.curr_updatefunc()
+            # this was not working anyway
+            # self.myInterface.state = 'mainmenu'
+
+            # change state
+            self.curr_initfunc = self.states[self.neostate].enter_state
+            self.curr_initfunc()
+            self.curr_updatefunc = self.states[self.neostate].update_chunk
+            self.curr_state = self.neostate
+
+        # TODO fix this, endgame condition
+        # return self.won

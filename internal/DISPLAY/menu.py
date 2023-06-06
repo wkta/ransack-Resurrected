@@ -13,9 +13,88 @@ from ..UTIL import const, colors, load_image, button
 pygame = pyv.pygame
 
 
+def openWindow(target_surf, xDim, yDim):
+    for i in range(10, int((xDim / 2)), 5):
+        borderBox = pygame.Surface((i * 2, yDim))
+        borderBox.fill(colors.grey)
+        msgBox = pygame.Surface(((i * 2) - 10, yDim - 10))
+        msgBox.fill(colors.gold)
+        borderBox.blit(msgBox, (5, 5))
+        borderBox = pygame.transform.scale(borderBox,
+                                           (int(ceil(borderBox.get_width() * const.scaleFactor)),
+                                            int(ceil(borderBox.get_height() * const.scaleFactor))))
+        target_surf.blit(borderBox,
+                         ((target_surf.get_width() / 2) - (borderBox.get_width() / 2), 41))
+        # self.Display.displayOneFrame(self.interface, self.FX)
+    return borderBox
+
+
+class StoryState:
+    def __init__(self, ref_display, ref_iface, ref_fx, ref_director, refgame):
+        """
+
+        :param ref_display: Display obj
+        :param ref_iface: interface recv from interface
+        :param ref_fx: FX object recv from game
+        :param ref_director: (loadDirector)
+        :param refgame: reference to game object (so we can change the state manually)
+        """
+        self.ref_game = refgame
+
+        self.screen = pyv.get_surface()
+        self.curr_msg = None
+        self.ref_disp = ref_display
+        self.ref_iface = ref_iface
+        self.ref_fx = ref_fx
+        self.director = ref_director
+
+    def set_message(self, msg):
+        self.curr_msg = msg
+
+    def enter_state(self):
+        if self.curr_msg is not None and len(self.curr_msg)>0:
+            storyBoxWin = openWindow(self.screen, 350, 300)
+            self.storyBox = pygame.transform.scale(storyBoxWin,
+                                              (int(ceil(storyBoxWin.get_width() * const.scaleFactor)),
+                                               int(ceil(storyBoxWin.get_height() * const.scaleFactor))))
+            self.msg_ = text.Text(self.curr_msg, os.getcwd() + "/FONTS/devinne.ttf", 14, colors.white, colors.gold, True, 30)
+        else:
+            self.curr_msg = None
+
+    def update_chunk(self):
+        """
+        method supposed to show a blocking popup over the rest of the game GUI.
+        Tom:this needs Refactoring! -> no more 2nd-level order game loops!
+        """
+        # ------------------------
+        # init-like Chunck of code
+        # ------------------------
+        if self.curr_msg is None:
+            self.ref_game.neostate = 'game'
+            return
+
+        # -------------------------
+        # update-like Chunk of code
+        # -------------------------
+        for ev in pygame.event.get():  # previously,game used pygame.event.wait().type != pygame.MOUSEBUTTONDOWN ...
+            if ev.type == pygame.MOUSEBUTTONDOWN:
+                print('force stop display story0')
+                self.director.setEvent(0)
+                self.ref_game.neostate = 'game'
+                return  # exit the curr loop
+
+        self.storyBox.blit(self.msg_, ((self.storyBox.get_width() / 2) - (self.msg_.get_width() / 2),
+                             (self.storyBox.get_height() / 2) - (self.msg_.get_height() / 2) + 41))
+        self.screen.blit(self.storyBox, (0, 41))
+        # TODO remake this
+        self.ref_disp.displayOneFrame(self.ref_iface, self.ref_fx)
+        pyv.flip()  # we need to updtae gfx mem
+
+
 class menu:
 
     def __init__(self, screen, iH, Display, iFace, FX, SFX):
+
         self.images = images.mapImages
         self.statsBox, r = load_image.load_image(os.path.join('MENU', "statsBox.png"))
         self.iMenuBox, r = load_image.load_image(os.path.join('MENU', "invMenu.png"))
@@ -31,22 +110,6 @@ class menu:
         self.interface = iFace
         self.FX = FX
         self.SFX = SFX
-
-    def openWindow(self, xDim, yDim):
-        for i in range(10, int((xDim / 2)), 5):
-            borderBox = pygame.Surface((i * 2, yDim))
-            borderBox.fill(colors.grey)
-            msgBox = pygame.Surface(((i * 2) - 10, yDim - 10))
-            msgBox.fill(colors.gold)
-            borderBox.blit(msgBox, (5, 5))
-            borderBox = pygame.transform.scale(borderBox,
-                                               (int(ceil(borderBox.get_width() * const.scaleFactor)),
-                                                int(ceil(borderBox.get_height() * const.scaleFactor))))
-            self.screen.blit(borderBox,
-                             ((self.screen.get_width() / 2) - (borderBox.get_width() / 2), 41))
-            self.Display.displayOneFrame(self.interface, self.FX)
-
-        return borderBox
 
     def circleStat(self, stat, fgc, bgc, loc, radius, mStat=20):
         pygame.draw
@@ -199,38 +262,6 @@ class menu:
                     return
                 if event_ == pygame.K_RETURN:
                     return
-
-    def displayStory(self, msg):  # so this method is actually used like a game loop by Dan
-        """
-        method supposed to show a blocking popup over the rest of the game GUI.
-        Tom:this needs Refactoring! -> no more 2nd-level order game loops!
-        """
-        # ------------------------
-        # init-like Chunck of code
-        # ------------------------
-        if msg is None:
-            return
-        storyBoxWin = self.openWindow(350, 300)
-        storyBox = pygame.transform.scale(storyBoxWin,
-                                          (int(ceil(self.storyBox.get_width() * const.scaleFactor)),
-                                           int(ceil(self.storyBox.get_height() * const.scaleFactor))))
-        msg_ = text.Text(msg, os.getcwd() + "/FONTS/devinne.ttf", 14, colors.white, colors.gold, True, 30)
-
-        is_stuck_on_popup = True
-        while is_stuck_on_popup:
-            # -------------------------
-            # update-like Chunk of code
-            # -------------------------
-            for ev in pygame.event.get():  # previously,game used pygame.event.wait().type != pygame.MOUSEBUTTONDOWN ...
-                if ev.type == pygame.MOUSEBUTTONDOWN:
-                    is_stuck_on_popup = False
-            storyBox.blit(msg_, ((storyBox.get_width() / 2) - (msg_.get_width() / 2),
-                                 (storyBox.get_height() / 2) - (msg_.get_height() / 2) + 41))
-            self.screen.blit(storyBox, (0, 41))
-            # TODO remake this
-            self.Display.displayOneFrame(self.interface, self.FX)
-
-            pyv.flip()  # we need to updtae gfx mem
 
     def getStatsTextLine(self, line):
         graphicElements = []
